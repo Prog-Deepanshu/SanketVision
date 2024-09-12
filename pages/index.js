@@ -1,11 +1,10 @@
-import React, { useRef, useState, useEffect } from "react"
-import * as tf from "@tensorflow/tfjs"
-import * as handpose from "@tensorflow-models/handpose"
-import Webcam from "react-webcam"
-import { drawHand } from "../components/handposeutil"
-import * as fp from "fingerpose"
-import Handsigns from "../components/handsigns"
-
+import React, { useRef, useState, useEffect } from "react";
+import * as tf from "@tensorflow/tfjs";
+import * as handpose from "@tensorflow-models/handpose";
+import Webcam from "react-webcam";
+import { drawHand } from "../components/handposeutil";
+import * as fp from "fingerpose";
+import Handsigns from "../components/handsigns";
 import {
   Text,
   Heading,
@@ -16,87 +15,69 @@ import {
   Box,
   VStack,
   ChakraProvider,
-} from "@chakra-ui/react"
-
-import { Signimage, Signpass } from "../components/handimage"
-
-import About from "../components/about"
-import Metatags from "../components/metatags"
-
-// import "../styles/App.css"
-
-// import "@tensorflow/tfjs-backend-webgl"
-
-import { RiCameraFill, RiCameraOffFill } from "react-icons/ri"
+} from "@chakra-ui/react";
+import { Signimage, Signpass } from "../components/handimage";
+import About from "../components/about";
+import Metatags from "../components/metatags";
+import { RiCameraFill, RiCameraOffFill } from "react-icons/ri";
 
 export default function Home() {
-  const webcamRef = useRef(null)
-  const canvasRef = useRef(null)
+  const webcamRef = useRef(null);
+  const canvasRef = useRef(null);
 
-  const [camState, setCamState] = useState("on")
+  const [camState, setCamState] = useState("on");
+  const [sign, setSign] = useState(null);
+  const [spokenText, setSpokenText] = useState("");
+  const [speechMode, setSpeechMode] = useState(false); // State for speech-to-text mode
+  const [showCaption, setShowCaption] = useState(false); // State for showing/hiding caption box
 
-  const [sign, setSign] = useState(null)
-
-  let signList = []
-  let currentSign = 0
-
-  let gamestate = "started"
-
-  // let net;
+  let signList = [];
+  let currentSign = 0;
+  let gamestate = "started";
 
   async function runHandpose() {
-    const net = await handpose.load()
-    _signList()
-
-    // window.requestAnimationFrame(loop);
-
+    const net = await handpose.load();
+    _signList();
     setInterval(() => {
-      detect(net)
-    }, 150)
+      detect(net);
+    }, 150);
   }
 
   function _signList() {
-    signList = generateSigns()
+    signList = generateSigns();
   }
 
   function shuffle(a) {
     for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      ;[a[i], a[j]] = [a[j], a[i]]
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
     }
-    return a
+    return a;
   }
 
   function generateSigns() {
-    const password = shuffle(Signpass)
-    return password
+    const password = shuffle(Signpass);
+    return password;
   }
 
   async function detect(net) {
-    // Check data is available
     if (
       typeof webcamRef.current !== "undefined" &&
       webcamRef.current !== null &&
       webcamRef.current.video.readyState === 4
     ) {
-      // Get Video Properties
-      const video = webcamRef.current.video
-      const videoWidth = webcamRef.current.video.videoWidth
-      const videoHeight = webcamRef.current.video.videoHeight
+      const video = webcamRef.current.video;
+      const videoWidth = webcamRef.current.video.videoWidth;
+      const videoHeight = webcamRef.current.video.videoHeight;
 
-      // Set video width
-      webcamRef.current.video.width = videoWidth
-      webcamRef.current.video.height = videoHeight
+      webcamRef.current.video.width = videoWidth;
+      webcamRef.current.video.height = videoHeight;
+      canvasRef.current.width = videoWidth;
+      canvasRef.current.height = videoHeight;
 
-      // Set canvas height and width
-      canvasRef.current.width = videoWidth
-      canvasRef.current.height = videoHeight
-
-      // Make Detections
-      const hand = await net.estimateHands(video)
+      const hand = await net.estimateHands(video);
 
       if (hand.length > 0) {
-        //loading the fingerpose model
         const GE = new fp.GestureEstimator([
           fp.Gestures.ThumbsUpGesture,
           Handsigns.aSign,
@@ -125,48 +106,41 @@ export default function Home() {
           Handsigns.xSign,
           Handsigns.ySign,
           Handsigns.zSign,
-        ])
+        ]);
 
-        const estimatedGestures = await GE.estimate(hand[0].landmarks, 6.5)
-        // document.querySelector('.pose-data').innerHTML =JSON.stringify(estimatedGestures.poseData, null, 2);
+        const estimatedGestures = await GE.estimate(hand[0].landmarks, 6.5);
 
         if (gamestate === "started") {
           document.querySelector("#app-title").innerText =
-            "Make a 👍 gesture with your hand to start"
+            "Make a 👍 gesture with your hand to start";
         }
 
         if (
           estimatedGestures.gestures !== undefined &&
           estimatedGestures.gestures.length > 0
         ) {
-          const confidence = estimatedGestures.gestures.map(p => p.confidence)
+          const confidence = estimatedGestures.gestures.map(p => p.confidence);
           const maxConfidence = confidence.indexOf(
             Math.max.apply(undefined, confidence)
-          )
+          );
 
-          //setting up game state, looking for thumb emoji
           if (
             estimatedGestures.gestures[maxConfidence].name === "thumbs_up" &&
             gamestate !== "played"
           ) {
-            _signList()
-            gamestate = "played"
-            document.getElementById("emojimage").classList.add("play")
+            _signList();
+            gamestate = "played";
+            document.getElementById("emojimage").classList.add("play");
             document.querySelector(".tutor-text").innerText =
-              "make a hand gesture based on letter shown below"
+              "make a hand gesture based on letter shown below";
           } else if (gamestate === "played") {
-            document.querySelector("#app-title").innerText = ""
+            document.querySelector("#app-title").innerText = "";
 
-            //looping the sign list
             if (currentSign === signList.length) {
-              _signList()
-              currentSign = 0
-              return
+              _signList();
+              currentSign = 0;
+              return;
             }
-
-            // console.log(signList[currentSign].src.src)
-
-            //game play state
 
             if (
               typeof signList[currentSign].src.src === "string" ||
@@ -174,47 +148,84 @@ export default function Home() {
             ) {
               document
                 .getElementById("emojimage")
-                .setAttribute("src", signList[currentSign].src.src)
+                .setAttribute("src", signList[currentSign].src.src);
               if (
                 signList[currentSign].alt ===
                 estimatedGestures.gestures[maxConfidence].name
               ) {
-                currentSign++
+                currentSign++;
               }
-              setSign(estimatedGestures.gestures[maxConfidence].name)
+              setSign(estimatedGestures.gestures[maxConfidence].name);
             }
           } else if (gamestate === "finished") {
-            return
+            return;
           }
         }
       }
-      // Draw hand lines
-      const ctx = canvasRef.current.getContext("2d")
-      drawHand(hand, ctx)
+      const ctx = canvasRef.current.getContext("2d");
+      drawHand(hand, ctx);
     }
   }
 
-  //   if (sign) {
-  //     console.log(sign, Signimage[sign])
-  //   }
-
   useEffect(() => {
-    runHandpose()
-  }, [])
+    runHandpose();
+  }, []);
+
+  const handleSpeechToText = () => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+      
+    if (!SpeechRecognition) {
+      alert("Speech Recognition API is not supported in this browser.");
+      return;
+    }
+  
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+  
+    recognition.onstart = () => {
+      setSpeechMode(true); // Set speech mode to true when recognition starts
+    };
+  
+    recognition.onend = () => {
+      setSpeechMode(false); // Set speech mode to false when recognition ends
+      setShowCaption(true); // Show the caption box when speech ends
+      
+      // Hide the caption box after 5 seconds
+      setTimeout(() => {
+        setShowCaption(false);
+      }, 5000);
+    };
+  
+    recognition.onresult = (event) => {
+      const speech = event.results[0][0].transcript.toLowerCase();
+      setSpokenText(speech); // Update spoken text to be displayed
+  
+      // Process commands
+      if (speech.includes("turn off camera")) {
+        setCamState("off");
+      } else if (speech.includes("turn on camera")) {
+        setCamState("on");
+      } else if (speech.includes("start game")) {
+        gamestate = "started";
+      } else if (speech.includes("stop game")) {
+        gamestate = "stopped";
+      }
+    };
+  
+    recognition.start();
+  };
 
   function turnOffCamera() {
-    if (camState === "on") {
-      setCamState("off")
-    } else {
-      setCamState("on")
-    }
+    setCamState(prevState => (prevState === "on" ? "off" : "on"));
   }
 
   return (
     <ChakraProvider>
       <Metatags />
-      <Box bgColor="#5784BA">
-        <Container centerContent maxW="xl" height="100vh" pt="0" pb="0">
+      <Box bgColor="#5784BA" position="relative" height="100vh">
+        <Container centerContent maxW="xl" height="100%" pt="0" pb="0">
           <VStack spacing={4} align="center">
             <Box h="20px"></Box>
             <Heading
@@ -237,11 +248,11 @@ export default function Home() {
             🧙‍♀️ Loading the Magic 🧙‍♂️
           </Heading>
 
-          <Box id="webcam-container">
+          <Box id="webcam-container" position="relative" width="100%" height="100%">
             {camState === "on" ? (
-              <Webcam id="webcam" ref={webcamRef} />
+              <Webcam id="webcam" ref={webcamRef} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }} />
             ) : (
-              <div id="webcam" background="black"></div>
+              <div id="webcam" style={{ background: "black", position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}></div>
             )}
 
             {sign ? (
@@ -253,6 +264,7 @@ export default function Home() {
                   right: "calc(50% - 50px)",
                   bottom: 100,
                   textAlign: "-webkit-center",
+                  zIndex: 10, // Ensure this is above other content
                 }}
               >
                 <Text color="white" fontSize="sm" mb={1}>
@@ -270,44 +282,41 @@ export default function Home() {
                   }}
                 />
               </div>
-            ) : (
-              " "
-            )}
+            ) : null}
           </Box>
 
-          <canvas id="gesture-canvas" ref={canvasRef} style={{}} />
+          <canvas id="gesture-canvas" ref={canvasRef} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: 1 }} />
 
-          <Box
-            id="singmoji"
-            style={{
-              zIndex: 9,
-              position: "fixed",
-              top: "50px",
-              right: "30px",
-            }}
-          ></Box>
+          <Image h="150px" objectFit="cover" id="emojimage" style={{ zIndex: 10 }} />
 
-          <Image h="150px" objectFit="cover" id="emojimage" />
-          {/* <pre className="pose-data" color="white" style={{position: 'fixed', top: '150px', left: '10px'}} >Pose data</pre> */}
+          <Stack id="start-button" spacing={4} direction="row" align="center" mt={4}>
+            <Button
+              leftIcon={camState === "on" ? <RiCameraFill size={20} /> : <RiCameraOffFill size={20} />}
+              onClick={turnOffCamera}
+              colorScheme="orange"
+            >
+              Camera
+            </Button>
+            <Button
+              onClick={handleSpeechToText}
+              colorScheme="blue"
+              ml={4}
+            >
+              {speechMode ? "Stop Speech Recognition" : "Start Speech Recognition"}
+            </Button>
+            <About />
+          </Stack>
+          
+          {/* Box to display spoken text */}
+          {showCaption && (
+            <Box bgColor="rgba(0, 0, 0, 0.6)" p={4} borderRadius="md" position="absolute" bottom={4} left={4} width="auto" maxWidth="400px" zIndex={3} overflowWrap="break-word">
+              <Text color="white" fontSize="lg">
+                {spokenText ? `You said: ${spokenText}` : "Speak something to see the text here."}
+              </Text>
+            </Box>
+          )}
         </Container>
-
-        <Stack id="start-button" spacing={4} direction="row" align="center">
-          <Button
-            leftIcon={
-              camState === "on" ? (
-                <RiCameraFill size={20} />
-              ) : (
-                <RiCameraOffFill size={20} />
-              )
-            }
-            onClick={turnOffCamera}
-            colorScheme="orange"
-          >
-            Camera
-          </Button>
-          <About />
-        </Stack>
       </Box>
     </ChakraProvider>
-  )
+  );
 }
