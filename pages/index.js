@@ -174,7 +174,7 @@ export default function Home() {
   const handleSpeechToText = () => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
-      
+  
     if (!SpeechRecognition) {
       alert("Speech Recognition API is not supported in this browser.");
       return;
@@ -184,38 +184,49 @@ export default function Home() {
     recognition.lang = "en-US";
     recognition.interimResults = false;
   
-    recognition.onstart = () => {
-      setSpeechMode(true); // Set speech mode to true when recognition starts
-    };
-  
-    recognition.onend = () => {
-      setSpeechMode(false); // Set speech mode to false when recognition ends
-      setShowCaption(true); // Show the caption box when speech ends
+    if (speechMode) {
+      // Stop speech recognition when button is clicked again
+      recognition.stop();
+      setSpeechMode(false);
+    } else {
+      // Start speech recognition
+      recognition.start();
+      setSpeechMode(true);
       
-      // Hide the caption box after 5 seconds
-      setTimeout(() => {
-        setShowCaption(false);
-      }, 5000);
-    };
+      recognition.onstart = () => {
+        setShowCaption(true);  // Show caption box when recording starts
+      };
   
-    recognition.onresult = (event) => {
-      const speech = event.results[0][0].transcript.toLowerCase();
-      setSpokenText(speech); // Update spoken text to be displayed
+      recognition.onresult = (event) => {
+        const speech = event.results[0][0].transcript.toLowerCase();
+        setSpokenText(speech);
   
-      // Process commands
-      if (speech.includes("turn off camera")) {
-        setCamState("off");
-      } else if (speech.includes("turn on camera")) {
-        setCamState("on");
-      } else if (speech.includes("start game")) {
-        gamestate = "started";
-      } else if (speech.includes("stop game")) {
-        gamestate = "stopped";
-      }
-    };
+        // Process commands
+        if (speech.includes("turn off camera")) {
+          setCamState("off");
+        } else if (speech.includes("turn on camera")) {
+          setCamState("on");
+        } else if (speech.includes("start game")) {
+          gamestate = "started";
+        } else if (speech.includes("stop game")) {
+          gamestate = "stopped";
+        }
   
-    recognition.start();
+        // Hide the caption after 10 seconds
+        setTimeout(() => {
+          setShowCaption(false);
+          setSpokenText("");  // Clear the text after 10 seconds
+        }, 10000);
+      };
+  
+      recognition.onend = () => {
+        if (speechMode) {
+          recognition.start();  // Restart speech recognition to keep it running
+        }
+      };
+    }
   };
+  
 
   function turnOffCamera() {
     setCamState(prevState => (prevState === "on" ? "off" : "on"));
@@ -289,18 +300,26 @@ export default function Home() {
 
           <Image h="150px" objectFit="cover" id="emojimage" style={{ zIndex: 10 }} />
 
-          <Stack id="start-button" spacing={4} direction="row" align="center" mt={4}>
+          <Stack 
+          id="start-button"
+          spacing={4}
+          direction="row"
+          align="center"
+          justifyContent="center"  // Center the buttons horizontally
+                    
+          mt={4}>
             <Button
               leftIcon={camState === "on" ? <RiCameraFill size={20} /> : <RiCameraOffFill size={20} />}
               onClick={turnOffCamera}
               colorScheme="orange"
+              width="300px"     
             >
               Camera
             </Button>
             <Button
               onClick={handleSpeechToText}
               colorScheme="blue"
-              ml={4}
+              width="300px" 
             >
               {speechMode ? "Stop Speech Recognition" : "Start Speech Recognition"}
             </Button>
