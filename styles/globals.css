@@ -90,7 +90,8 @@ img {
 }
 
 #start-button {
-  width: 400px;
+  width: 600px;
+  margin-left: -100px ;
   /* background-color: black;*/
   /* color: white; */
   /* font-size: 16px; */
