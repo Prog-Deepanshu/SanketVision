@@ -183,19 +183,17 @@ export default function Home() {
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
     recognition.interimResults = false;
-  
+    
     if (speechMode) {
       // Stop speech recognition when button is clicked again
       recognition.stop();
       setSpeechMode(false);
+      setShowCaption(false); // Hide the caption when stopping
     } else {
       // Start speech recognition
       recognition.start();
       setSpeechMode(true);
-      
-      recognition.onstart = () => {
-        setShowCaption(true);  // Show caption box when recording starts
-      };
+      setShowCaption(true); // Show caption box when recording starts
   
       recognition.onresult = (event) => {
         const speech = event.results[0][0].transcript.toLowerCase();
@@ -226,6 +224,7 @@ export default function Home() {
       };
     }
   };
+  
   
 
   function turnOffCamera() {
