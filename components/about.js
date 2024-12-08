@@ -31,7 +31,7 @@ export default function About() {
           <ModalCloseButton />
           <ModalBody>
             <Text fontSize="sm">
-              Sanket Vision is a basic ASL (Ameican Sign Language) detector which 
+              Sanket Vision is an ASL (Ameican Sign Language) detector which 
               uses tensorflow.js to detect the hand signs. The model is made in order 
               help people learn Sign Language and also, interact in a better way with
               the deaf.
