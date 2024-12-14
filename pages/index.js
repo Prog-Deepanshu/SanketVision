@@ -277,20 +277,8 @@ export default function Home() {
                   zIndex: 10, // Ensure this is above other content
                 }}
               >
-                <Text color="white" fontSize="sm" mb={1}>
-                  detected gestures
-                </Text>
-                <img
-                  alt="signImage"
-                  src={
-                    Signimage[sign]?.src
-                      ? Signimage[sign].src
-                      : "/loveyou_emoji.svg"
-                  }
-                  style={{
-                    height: 30,
-                  }}
-                />
+              
+                
               </div>
             ) : null}
           </Box>
